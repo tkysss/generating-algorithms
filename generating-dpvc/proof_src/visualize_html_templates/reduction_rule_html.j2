@@ -1,0 +1,27 @@
+<p><h3>{{rule['type']}}</h3></p>
+
+{% if rule['type'] == 'handled_by_red_star_reduction' %}
+    <table class="table table-striped table-hover ">
+        <tr><td>kcenter_vertices (C):</td><td>{{rule['kcenter_vertices']|join(', ')}}</td></tr>
+        <tr><td>red_rays_vertices (L):</td><td>{{rule['red_rays_vertices']|join(', ')}}</td></tr>
+    </table>
+
+    <div id="reductionRuleRedStarReductionMainGraphImage"></div>
+
+{% elif rule['type'] == 'handled_by_red_component_reduction' %}
+    <table class="table table-striped table-hover ">
+        <tr><td>v:</td><td>{{rule['v']}}</td></tr>
+        <tr><td>red_component1 (C_1):</td><td>{{rule['red_component1']|join(', ')}}</td></tr>
+        <tr><td>red_component2 (C_2):</td><td>{{rule['red_component2']|join(', ')}}</td></tr>
+    </table>
+
+    <div id="reductionRuleRedComponentReductionMainGraphImage"></div>
+
+{% elif rule['type'] == 'handled_by_vertex_cover_struction' %}
+    <table class="table table-striped table-hover ">
+        <tr><td>v:</td><td>{{rule['v']}}</td></tr>
+        <tr><td>p (neighbors):</td><td>{{rule['p']}}</td></tr>
+        <tr><td>q (neighborhood non-edges):</td><td>{{rule['q']}}</td></tr>
+    </table>
+
+{% endif %}

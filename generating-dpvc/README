@@ -1,0 +1,108 @@
+Automated Generation of Faster Algorithms for d-Path Vertex Cover - README
+
+This README includes:
+1) System requirements
+2) How to install
+3) How to run
+4) Output explanation
+5) Visualizing the output
+
+System requirements
+-------------------
+You need to have the following installed on your system:
+1) g++ with c++11 support - we used g++ 10.3.0
+2) OpenMP library (https://www.openmp.org/)
+3) Boost C++ library (https://www.boost.org/) - we only need --with-iostreams
+3) make for convenient usage of Makefile
+
+How to install
+--------------
+1) Locate the build directory of your Boost C++ library. Let it be /path/to/your/boost.
+2) Run "make boost_build_dir=/path/to/your/boost in the main folder next to "Makefile".
+3) A directory called "build" should be created with the executables - there should be a file called "generating_algorithm".
+
+How to run
+----------
+The "generating_algorithm" program requires 3 arguments:
+1) DPVC_PATH_LEN - integer - The length of d-path we want the algorithm to solve.
+2) DPVC_BF       - float   - The desired branching factor we want to achieve.
+3) GENERATIONS   - integer - The maximum number of iterations the algorithm will perform.
+
+For example you can run the algorithm: "./generating_algorithm 5 2.9 20" to solve 5-PVC with target branching factor 2.9 for maximum of 20 iterations.
+
+The program logs its progress to stderr.
+If the program succeeds, the final lines of the stderr output will be:
+
+success with:
+-- max_branching_rules_bf=3.09891
+-- branching_rules=1535
+-- max_not_solved_branching_rules_bf=0
+-- not_solved_branching_rules=0
+
+If the program fails, the final lines of the stderr output will be:
+
+failed with:
+-- max_branching_rules_bf=2.89977
+-- branching_rules=10397
+-- max_not_solved_branching_rules_bf=5.00001
+-- not_solved_branching_rules=715
+
+Further, several files will be created in the current working directory. Their description follows.
+
+
+Description of the created files
+--------------------------------
+For our example run "./generating_algorithm 5 2.9 20", those files will be prefixed with "5_2.9_20":
+
+4 files will be generated:
+1) 5_2.9_20.stats.out - The file contains statistics about the run in JSON format.
+2) 5_2.9_20.branching_rules.out - This file contains the branching rules with good branching factors (better than target). The format is lines of JSON - each line is a JSON document representing one rule.
+3) 5_2.9_20.not_solved_branching_rules.out - Same as "branching_rules.out" but with branching rules with bad branching factors. This file is populated in case of failure (exceeding GENERATIONS).
+3) 5_2.9_20.proof.out.gz - This file contains the stream of data needed to compose the verifiable "proof" of our generated algorithm. See "Composing the verifiable proof" on how to work with this.
+
+The line of branching_rules.out (or not_solved_branching_rules.out) looks like this:
+
+{"graph":{"n":3,"edges":[[0,1],[0,2]]},"red_vertices":[],"minimal_branches":[[0],[1],[2]],"dominance_free_branches":[],"branches":[[0],[1],[2]],"bf":3.000000,"type":"minimal"}
+
+And the single fields are:
+1) graph - Encoding of the graph. "n" is the number of vertices and "edges" are its edges. Vertices of our graphs always start from 0 and end with n-1.
+2) red_vertices - List of the red vertices of the graph.
+3) minimal_branches - List of lists of vertices. Encodes the branches of minimal solutions.
+4) dominance_free_branches - Same as minimal_branches but encodes dominance-free solutions.
+5) branches - Same as minimal_branches but encodes the final solutions after adjustments.
+6) bf - The branching factor of this rule.
+7) type - Type of this rule. Describes whether it is a branching rule or it was handled.
+
+Composing the verifiable proof
+------------------------------
+First, you need python3 (python3.8) and we recommend creating a python virtual environment.
+You need the following packages: networkx, matplotlib, scipy, jinja2
+
+Now, assume that you ran the algorithm with  "./generating_algorithm 5 2.9 20". There should be a file "5_2.9_20.proof.out.gz".
+
+We first need to export it. The contents of "5_2.9_20.proof.out.gz" are more like a stream of data (as this file is generated on the fly while the generating_algorithm is running) and although it contains full information about the proof, the format is very unfriendly. We export the proof to create a very user friendly machine readable format.
+
+We export the proof by running the following command:
+"python3 proof_src/export_proof.py 5_2.9_20.proof.out.gz --export_dir_path 5_2.9_20.proof_export"
+
+This will create a folder called "5_2.9_20.proof_export" containing the exported proof.
+
+Verifying the proof
+-------------------
+The main purpose of the proof is to convince you, that the generated algorithm is correct, without you needing to go over the source code of the generating_algorithm (of course, we encourage you to do so!). The exported proof fully describes the algorithm with additional metadata. We provide a simple python script, that verifies the properties and requirements as they are described in the paper. We believe that going over this verifying script and convincing yourself that the script indeed verifies the proof (and consequently the algorithm), should be much more doable than going over the whole source code of the generating algorithm.
+
+The script is in "proof_src/verify_proof.py". And we can run it like this:
+"python3 proof_src/verify_proof.py 3_2_10.proof_export/"
+
+If the script does not abort (raises an exception), then the verification was successful.
+
+Visualizing the proof
+---------------------
+Further, we provide a way to visualize the proof for you to click through.
+
+Run the following script:
+"python3 proof_src/visualize_proof.py 3_2_10.proof_export/ --visualization_dir_path 3_2_10.proof_visualization"
+
+This will create a HTML representation of the proof in the folder "3_2_10.proof_visualization". You can open the file "3_2_10.proof_visualization/html/index.html" and start exploring the proof and the algorithm itself!
+
+In the repository https://github.com/generating-algorithms/generating-dpvc-data, we provide some proofs which are already exported together with their visualizations.
